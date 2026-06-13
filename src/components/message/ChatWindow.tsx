@@ -14,9 +14,10 @@ interface ChatWindowProps {
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) => {
   const { currentUser } = useUserStore();
-  const { messages, sendMessage } = useMessageStore();
+  const { messages, sendMessage, setFeedbackDeadline, applications } = useMessageStore();
   const [newMessage, setNewMessage] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const conversationMessages = messages[conversation.id] || [];
@@ -36,6 +37,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleConfirmDate = () => {
+    if (!selectedDate || !currentUser) return;
+
+    const application = applications.find(app => app.seekerId === conversation.participantId);
+    if (application) {
+      const deadline = new Date(selectedDate).getTime();
+      setFeedbackDeadline(application.id, deadline);
+      sendMessage(
+        conversation.id,
+        `已约定反馈时间：${new Date(deadline).toLocaleDateString('zh-CN')}`,
+        currentUser.id,
+        'feedback_约定'
+      );
+    }
+    setShowDatePicker(false);
+    setSelectedDate('');
   };
 
   return (
@@ -65,11 +84,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
           <div className="flex items-center space-x-2">
             <input
               type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
               className="flex-1 px-3 py-2 border border-blue-200 rounded-lg text-sm"
               min={new Date().toISOString().split('T')[0]}
             />
-            <Button size="sm" onClick={() => setShowDatePicker(false)}>
+            <Button size="sm" onClick={handleConfirmDate} disabled={!selectedDate}>
               确认
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setShowDatePicker(false)}>
+              取消
             </Button>
           </div>
         </div>

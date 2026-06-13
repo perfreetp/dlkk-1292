@@ -16,7 +16,7 @@ export const JobDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { jobs, incrementAppliedCount, favorites, toggleFavorite } = useJobStore();
   const { currentUser } = useUserStore();
-  const { createConversation } = useMessageStore();
+  const { createConversation, createApplication } = useMessageStore();
 
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [resumeSummary, setResumeSummary] = useState('');
@@ -54,9 +54,21 @@ export const JobDetailPage: React.FC = () => {
       job.publisherName,
       job.publisherAvatar
     );
+
+    createApplication({
+      jobId: job.id,
+      jobTitle: job.title,
+      company: job.company,
+      seekerId: currentUser.id,
+      seekerName: currentUser.nickname,
+      seekerAvatar: currentUser.avatar,
+      resumeSummary: resumeSummary,
+    });
+
     setApplied(true);
     setShowApplyModal(false);
-    navigate(`/messages`);
+    setResumeSummary('');
+    navigate(`/exchange`);
   };
 
   const handleContact = () => {

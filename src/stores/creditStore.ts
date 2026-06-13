@@ -6,11 +6,31 @@ interface CreditStore {
   records: CreditRecord[];
   successCases: SuccessCase[];
   addRecord: (record: Omit<CreditRecord, 'id' | 'createdAt'>) => void;
-  reportUser: (userId: string, reason: string) => void;
+  reportUser: (reporterId: string, reportedUserId: string, reason: string) => void;
+  initEventListeners: () => void;
 }
 
+const loadFromStorage = <T>(key: string, defaultValue: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+const saveToStorage = <T>(key: string, value: T) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    console.warn('Failed to save to localStorage');
+  }
+};
+
+const initialRecords = loadFromStorage('creditRecords', mockCreditRecords);
+
 export const useCreditStore = create<CreditStore>((set, get) => ({
-  records: mockCreditRecords,
+  records: initialRecords,
   successCases: mockSuccessCases,
 
   addRecord: (recordData) => {
@@ -20,20 +40,110 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
       createdAt: Date.now(),
     };
 
-    set({ records: [newRecord, ...get().records] });
+    const updatedRecords = [newRecord, ...get().records];
+    set({ records: updatedRecords });
+    saveToStorage('creditRecords', updatedRecords);
+
+    const event = new CustomEvent('creditChanged', {
+      detail: {
+        userId: recordData.userId,
+        scoreChange: recordData.score,
+      }
+    });
+    window.dispatchEvent(event);
   },
 
-  reportUser: (userId: string, reason: string) => {
+  reportUser: (reporterId: string, reportedUserId: string, reason: string) => {
     const { records } = get();
+
     const newRecord: CreditRecord = {
       id: `cr-${Date.now()}`,
-      userId,
+      userId: reportedUserId,
       type: 'report',
       score: -30,
       reason: `被举报：${reason}`,
+      relatedUserId: reporterId,
       createdAt: Date.now(),
     };
 
-    set({ records: [newRecord, ...records] });
+    const updatedRecords = [newRecord, ...records];
+    set({ records: updatedRecords });
+    saveToStorage('creditRecords', updatedRecords);
+
+    const event = new CustomEvent('creditChanged', {
+      detail: {
+        userId: reportedUserId,
+        scoreChange: -30,
+      }
+    });
+    window.dispatchEvent(event);
+  },
+
+  initEventListeners: () => {
+    window.addEventListener('submitFeedback', ((event: CustomEvent) => {
+      const { application, result } = event.detail;
+      const { addRecord, records } = get();
+
+      if (result === 'success') {
+        addRecord({
+          userId: application.seekerId,
+          type: 'success',
+          score: 10,
+          reason: `内推成功入职 ${application.company}`,
+          relatedUserId: application.jobId,
+        });
+
+        addRecord({
+          userId: application.jobId,
+          type: 'success',
+          score: 10,
+          reason: `成功内推 ${application.seekerName}`,
+          relatedUserId: application.seekerId,
+        });
+      }
+
+      const seekerRecord: CreditRecord = {
+        id: `cr-${Date.now()}-seeker`,
+        userId: application.seekerId,
+        type: result === 'success' ? 'success' : 'missedDeadline',
+        score: result === 'success' ? 10 : 0,
+        reason: result === 'success' ? '内推成功' : '内推未成功',
+        relatedUserId: application.jobId,
+        createdAt: Date.now(),
+      };
+
+      const publisherRecord: CreditRecord = {
+        id: `cr-${Date.now()}-publisher`,
+        userId: application.jobId,
+        type: result === 'success' ? 'success' : 'missedDeadline',
+        score: result === 'success' ? 10 : 0,
+        reason: result === 'success' ? '成功内推' : '内推未成功',
+        relatedUserId: application.seekerId,
+        createdAt: Date.now(),
+      };
+
+      const updatedRecords = [seekerRecord, publisherRecord, ...records];
+      saveToStorage('creditRecords', updatedRecords);
+    }) as EventListener);
+
+    window.addEventListener('addEvaluation', ((event: CustomEvent) => {
+      const { application, rating, comment } = event.detail;
+      const { records } = get();
+
+      const scoreChange = rating >= 4 ? 5 : rating >= 3 ? 2 : rating >= 2 ? 0 : -5;
+
+      const record: CreditRecord = {
+        id: `cr-${Date.now()}-eval`,
+        userId: application.jobId,
+        type: 'success',
+        score: scoreChange,
+        reason: `获得评价：${comment} (${rating}星)`,
+        relatedUserId: application.seekerId,
+        createdAt: Date.now(),
+      };
+
+      const updatedRecords = [record, ...records];
+      saveToStorage('creditRecords', updatedRecords);
+    }) as EventListener);
   },
 }));

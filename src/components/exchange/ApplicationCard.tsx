@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, XCircle, Calendar, MessageCircle, Star } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Calendar, MessageCircle, Star, ThumbsUp } from 'lucide-react';
 import { ExchangeApplication } from '../../types';
 import { Card } from '../common/Card';
 import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import { Avatar } from '../common/Avatar';
+import { Modal } from '../common/Modal';
 import { useMessageStore } from '../../stores/messageStore';
 import { useUserStore } from '../../stores/userStore';
-import { Modal } from '../common/Modal';
 
 interface ApplicationCardProps {
   application: ExchangeApplication;
@@ -17,9 +17,12 @@ interface ApplicationCardProps {
 export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application }) => {
   const navigate = useNavigate();
   const { currentUser } = useUserStore();
-  const { createConversation } = useMessageStore();
+  const { createConversation, submitFeedback, addEvaluation } = useMessageStore();
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showEvaluateModal, setShowEvaluateModal] = useState(false);
   const [feedbackResult, setFeedbackResult] = useState<'success' | 'fail' | ''>('');
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -79,7 +82,17 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
 
   const handleFeedback = () => {
     if (!feedbackResult) return;
+    submitFeedback(application.id, feedbackResult);
     setShowFeedbackModal(false);
+    setFeedbackResult('');
+  };
+
+  const handleEvaluate = () => {
+    if (!comment.trim()) return;
+    addEvaluation(application.id, rating, comment);
+    setShowEvaluateModal(false);
+    setRating(5);
+    setComment('');
   };
 
   const statusConfig = getStatusConfig(application.status);
@@ -93,6 +106,12 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
               <div className="flex items-center space-x-2 mb-2">
                 <h3 className="text-lg font-semibold text-gray-900">{application.jobTitle}</h3>
                 <Badge variant={statusConfig.variant}>{statusConfig.text}</Badge>
+                {application.result === 'success' && (
+                  <Badge variant="success">内推成功</Badge>
+                )}
+                {application.result === 'fail' && (
+                  <Badge variant="danger">未成功</Badge>
+                )}
               </div>
               <p className="text-gray-600">{application.company}</p>
             </div>
@@ -139,12 +158,18 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
               </Button>
             )}
 
-            {application.status === 'completed' && (
-              <Link to={`/job/${application.jobId}`}>
-                <Button variant="secondary" size="sm">
-                  查看职位
+            {application.status === 'completed' && application.result === 'success' && (
+              <>
+                <Link to={`/job/${application.jobId}`}>
+                  <Button variant="secondary" size="sm">
+                    查看职位
+                  </Button>
+                </Link>
+                <Button size="sm" onClick={() => setShowEvaluateModal(true)}>
+                  <ThumbsUp className="w-4 h-4 mr-1" />
+                  给对方评分
                 </Button>
-              </Link>
+              </>
             )}
           </div>
         </div>
@@ -191,6 +216,53 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
             </Button>
             <Button onClick={handleFeedback} disabled={!feedbackResult}>
               确认提交
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showEvaluateModal}
+        onClose={() => setShowEvaluateModal(false)}
+        title="评价内推者"
+        size="md"
+      >
+        <div className="p-6 space-y-4">
+          <p className="text-gray-600">请对本次内推体验评分：</p>
+
+          <div className="flex items-center justify-center space-x-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                onClick={() => setRating(star)}
+                className={`p-2 transition-all ${
+                  star <= rating ? 'text-yellow-500 scale-110' : 'text-gray-300'
+                }`}
+              >
+                <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </button>
+            ))}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">评价内容</label>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="分享你的内推体验，让更多人了解..."
+              rows={4}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button variant="secondary" onClick={() => setShowEvaluateModal(false)}>
+              取消
+            </Button>
+            <Button onClick={handleEvaluate} disabled={!comment.trim()}>
+              提交评价
             </Button>
           </div>
         </div>

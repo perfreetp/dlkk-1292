@@ -23,11 +23,31 @@ interface JobStore {
   toggleFavorite: (jobId: string) => void;
 }
 
+const loadFromStorage = <T>(key: string, defaultValue: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+const saveToStorage = <T>(key: string, value: T) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    console.warn('Failed to save to localStorage');
+  }
+};
+
+const initialJobs = loadFromStorage<Job[]>('jobs', mockJobs);
+const initialFavorites = loadFromStorage<string[]>('favorites', []);
+
 export const useJobStore = create<JobStore>((set, get) => ({
-  jobs: mockJobs,
-  filteredJobs: mockJobs,
+  jobs: initialJobs,
+  filteredJobs: initialJobs.filter(job => job.status === 'open'),
   filters: {},
-  favorites: [],
+  favorites: initialFavorites,
   myPublishedJobs: [],
 
   setFilters: (filters: JobFilters) => {
@@ -81,11 +101,16 @@ export const useJobStore = create<JobStore>((set, get) => ({
       createdAt: Date.now(),
     };
 
+    const updatedJobs = [newJob, ...jobs];
+    const updatedPublished = [newJob, ...myPublishedJobs];
+
     set({
-      jobs: [newJob, ...jobs],
-      filteredJobs: [newJob, ...jobs].filter(j => j.status === 'open'),
-      myPublishedJobs: [newJob, ...myPublishedJobs],
+      jobs: updatedJobs,
+      filteredJobs: updatedJobs.filter(j => j.status === 'open'),
+      myPublishedJobs: updatedPublished,
     });
+
+    saveToStorage('jobs', updatedJobs);
   },
 
   closeJob: (jobId: string) => {
@@ -102,6 +127,8 @@ export const useJobStore = create<JobStore>((set, get) => ({
       filteredJobs: updatedJobs.filter(j => j.status === 'open'),
       myPublishedJobs: updatedPublished,
     });
+
+    saveToStorage('jobs', updatedJobs);
   },
 
   incrementAppliedCount: (jobId: string) => {
@@ -114,6 +141,8 @@ export const useJobStore = create<JobStore>((set, get) => ({
       jobs: updatedJobs,
       filteredJobs: updatedJobs.filter(j => j.status === 'open'),
     });
+
+    saveToStorage('jobs', updatedJobs);
   },
 
   toggleFavorite: (jobId: string) => {
@@ -123,6 +152,6 @@ export const useJobStore = create<JobStore>((set, get) => ({
       : [...favorites, jobId];
 
     set({ favorites: newFavorites });
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    saveToStorage('favorites', newFavorites);
   },
 }));

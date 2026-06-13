@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
@@ -9,6 +9,7 @@ import { CreditPage } from './pages/CreditPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { LoginPage } from './pages/LoginPage';
 import { useUserStore } from './stores/userStore';
+import { useCreditStore } from './stores/creditStore';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useUserStore();
@@ -21,6 +22,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 function App() {
+  useEffect(() => {
+    useUserStore.getState().initEventListeners();
+    useCreditStore.getState().initEventListeners();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

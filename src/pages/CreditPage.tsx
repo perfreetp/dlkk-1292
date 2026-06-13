@@ -6,15 +6,16 @@ import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
-import { Textarea } from '../components/common/Input';
+import { Textarea, Select } from '../components/common/Input';
 import { CreditScore, CreditHistoryItem } from '../components/credit/CreditScore';
 import { SuccessCaseCard, SuccessCaseStats } from '../components/credit/SuccessCaseCard';
 
 export const CreditPage: React.FC = () => {
-  const { currentUser } = useUserStore();
+  const { currentUser, users } = useUserStore();
   const { records, successCases, reportUser } = useCreditStore();
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState('');
 
   if (!currentUser) {
     return (
@@ -34,11 +35,14 @@ export const CreditPage: React.FC = () => {
 
   const creditLevel = currentUser.creditScore >= 80 ? '优秀' : currentUser.creditScore >= 60 ? '良好' : '需改进';
 
+  const reportableUsers = users.filter(u => u.id !== currentUser.id);
+
   const handleReport = () => {
-    if (!reportReason.trim()) return;
-    reportUser(currentUser.id, reportReason);
+    if (!reportReason.trim() || !selectedUserId) return;
+    reportUser(currentUser.id, selectedUserId, reportReason);
     setShowReportModal(false);
     setReportReason('');
+    setSelectedUserId('');
   };
 
   return (
@@ -223,9 +227,19 @@ export const CreditPage: React.FC = () => {
             </p>
           </div>
 
+          <Select
+            label="选择被举报用户"
+            value={selectedUserId}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+            options={[
+              { value: '', label: '请选择用户' },
+              ...reportableUsers.map(u => ({ value: u.id, label: `${u.nickname} (${u.role === 'seeker' ? '求职者' : '在职员工'})` })),
+            ]}
+          />
+
           <Textarea
             label="举报原因"
-            placeholder="请详细描述违规行为..."
+            placeholder="请详细描述违规行为，例如：对方答应了内推但没有反馈，或者在约定时间内没有回复..."
             rows={6}
             value={reportReason}
             onChange={(e) => setReportReason(e.target.value)}
@@ -235,7 +249,7 @@ export const CreditPage: React.FC = () => {
             <Button variant="secondary" onClick={() => setShowReportModal(false)}>
               取消
             </Button>
-            <Button onClick={handleReport} disabled={!reportReason.trim()}>
+            <Button onClick={handleReport} disabled={!reportReason.trim() || !selectedUserId}>
               提交举报
             </Button>
           </div>
