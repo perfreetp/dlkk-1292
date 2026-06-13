@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Clock, XCircle, Calendar, MessageCircle, Star, ThumbsUp } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Calendar, MessageCircle, Star, ThumbsUp, Eye } from 'lucide-react';
 import { ExchangeApplication } from '../../types';
 import { Card } from '../common/Card';
 import { Badge } from '../common/Badge';
@@ -12,9 +12,11 @@ import { useUserStore } from '../../stores/userStore';
 
 interface ApplicationCardProps {
   application: ExchangeApplication;
+  onViewDetail?: (application: ExchangeApplication) => void;
+  showDetailButton?: boolean;
 }
 
-export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application }) => {
+export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application, onViewDetail, showDetailButton }) => {
   const navigate = useNavigate();
   const { currentUser } = useUserStore();
   const { acceptApplication, submitFeedback, addEvaluation, createConversation, getConversationByApplication } = useMessageStore();
@@ -80,11 +82,11 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
         ? application.publisherId
         : application.seekerId;
       const participantName = currentUser.id === application.seekerId
-        ? application.jobTitle
+        ? application.seekerName
         : application.seekerName;
       const participantAvatar = currentUser.id === application.seekerId
-        ? ''
-        : application.seekerAvatar;
+        ? application.seekerAvatar
+        : '';
 
       const convId = createConversation(
         participantId,
@@ -110,8 +112,8 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
   };
 
   const handleEvaluate = () => {
-    if (!comment.trim()) return;
-    addEvaluation(application.id, rating, comment);
+    if (!comment.trim() || !currentUser) return;
+    addEvaluation(application.id, rating, comment, currentUser.id, currentUser.nickname);
     setShowEvaluateModal(false);
     setRating(5);
     setComment('');
@@ -164,6 +166,13 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
               <MessageCircle className="w-4 h-4 mr-1" />
               沟通
             </Button>
+
+            {showDetailButton && onViewDetail && (
+              <Button variant="secondary" size="sm" onClick={() => onViewDetail(application)}>
+                <Eye className="w-4 h-4 mr-1" />
+                查看详情
+              </Button>
+            )}
 
             {application.status === 'pending' && (
               <>
@@ -247,7 +256,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
       <Modal
         isOpen={showEvaluateModal}
         onClose={() => setShowEvaluateModal(false)}
-        title="评价内推者"
+        title={currentUser?.id === application.seekerId ? "评价内推者" : "评价求职者"}
         size="md"
       >
         <div className="p-6 space-y-4">

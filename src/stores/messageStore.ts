@@ -18,7 +18,7 @@ interface MessageStore {
   getConversationByApplication: (applicationId: string) => Conversation | undefined;
   createApplication: (applicationData: Omit<ExchangeApplication, 'id' | 'createdAt' | 'status'>) => ExchangeApplication;
   submitFeedback: (applicationId: string, result: 'success' | 'fail') => void;
-  addEvaluation: (applicationId: string, rating: number, comment: string) => void;
+  addEvaluation: (applicationId: string, rating: number, comment: string, evaluatorId: string, evaluatorName: string) => void;
 }
 
 const loadFromStorage = <T>(key: string, defaultValue: T): T => {
@@ -149,18 +149,6 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
       }
     }
 
-    const existingConv = conversations.find(c => c.participantId === participantId && !c.applicationId);
-    if (existingConv) {
-      if (applicationId) {
-        const updatedConversations = conversations.map(c =>
-          c.id === existingConv.id ? { ...c, applicationId } : c
-        );
-        set({ conversations: updatedConversations });
-        saveToStorage('conversations', updatedConversations);
-      }
-      return existingConv.id;
-    }
-
     const newConv: Conversation = {
       id: `conv-${Date.now()}`,
       participantId,
@@ -229,7 +217,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     window.dispatchEvent(event);
   },
 
-  addEvaluation: (applicationId: string, rating: number, comment: string) => {
+  addEvaluation: (applicationId: string, rating: number, comment: string, evaluatorId: string, evaluatorName: string) => {
     const { applications } = get();
     const application = applications.find(app => app.id === applicationId);
     if (!application) return;
@@ -240,6 +228,8 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         application,
         rating,
         comment,
+        evaluatorId,
+        evaluatorName,
       }
     });
     window.dispatchEvent(event);

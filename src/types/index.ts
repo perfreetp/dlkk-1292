@@ -78,11 +78,15 @@ export interface Message {
 export interface CreditRecord {
   id: string;
   userId: string;
-  type: 'success' | 'onTimeFeedback' | 'missedDeadline' | 'report';
+  type: 'success' | 'onTimeFeedback' | 'missedDeadline' | 'report' | 'evaluation';
   score: number;
   reason: string;
   relatedUserId?: string;
   relatedUserName?: string;
+  relatedApplicationId?: string;
+  relatedJobTitle?: string;
+  relatedCompany?: string;
+  rating?: number;
   createdAt: number;
 }
 

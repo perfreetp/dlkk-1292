@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Award, TrendingUp, TrendingDown, Minus, Star } from 'lucide-react';
 
 interface CreditScoreProps {
   score: number;
@@ -62,10 +62,14 @@ export const CreditScore: React.FC<CreditScoreProps> = ({ score }) => {
 
 interface CreditHistoryItemProps {
   record: {
-    type: 'success' | 'onTimeFeedback' | 'missedDeadline' | 'report';
+    type: 'success' | 'onTimeFeedback' | 'missedDeadline' | 'report' | 'evaluation';
     score: number;
     reason: string;
     createdAt: number;
+    relatedUserName?: string;
+    relatedJobTitle?: string;
+    relatedCompany?: string;
+    rating?: number;
   };
 }
 
@@ -80,6 +84,8 @@ export const CreditHistoryItem: React.FC<CreditHistoryItemProps> = ({ record }) 
         return { icon: TrendingDown, color: 'text-red-600 bg-red-100', label: '失约' };
       case 'report':
         return { icon: TrendingDown, color: 'text-red-600 bg-red-100', label: '被举报' };
+      case 'evaluation':
+        return { icon: Star, color: 'text-yellow-600 bg-yellow-100', label: '获得评价' };
       default:
         return { icon: Minus, color: 'text-gray-600 bg-gray-100', label: '其他' };
     }

@@ -6,8 +6,11 @@ import { useUserStore } from '../stores/userStore';
 import { useMessageStore } from '../stores/messageStore';
 import { MatchCard } from '../components/exchange/MatchCard';
 import { ApplicationCard } from '../components/exchange/ApplicationCard';
+import { ApplicationDetail } from '../components/exchange/ApplicationDetail';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
+import { Button } from '../components/common/Button';
+import { ExchangeApplication } from '../types';
 
 type TabType = 'recommendations' | 'applications' | 'received';
 
@@ -17,6 +20,7 @@ export const ExchangePage: React.FC = () => {
   const { applications } = useMessageStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('recommendations');
+  const [selectedApplication, setSelectedApplication] = useState<ExchangeApplication | null>(null);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -123,40 +127,80 @@ export const ExchangePage: React.FC = () => {
 
           {activeTab === 'applications' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">我的内推申请</h2>
-
-              {myApplications.length === 0 ? (
-                <Card className="text-center py-12">
-                  <Briefcase className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">暂无申请记录</h3>
-                  <p className="text-gray-500">去职位广场看看有哪些内推机会吧</p>
-                </Card>
+              {selectedApplication ? (
+                <>
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => setSelectedApplication(null)}
+                    className="mb-4"
+                  >
+                    返回申请列表
+                  </Button>
+                  <ApplicationDetail application={selectedApplication} />
+                </>
               ) : (
-                <div>
-                  {myApplications.map(app => (
-                    <ApplicationCard key={app.id} application={app} />
-                  ))}
-                </div>
+                <>
+                  <h2 className="text-xl font-semibold text-gray-900">我的内推申请</h2>
+
+                  {myApplications.length === 0 ? (
+                    <Card className="text-center py-12">
+                      <Briefcase className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">暂无申请记录</h3>
+                      <p className="text-gray-500">去职位广场看看有哪些内推机会吧</p>
+                    </Card>
+                  ) : (
+                    <div>
+                      {myApplications.map(app => (
+                        <ApplicationCard 
+                          key={app.id} 
+                          application={app} 
+                          showDetailButton={true}
+                          onViewDetail={setSelectedApplication}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
           {activeTab === 'received' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">收到的内推申请</h2>
-
-              {receivedApplications.length === 0 ? (
-                <Card className="text-center py-12">
-                  <TrendingUp className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">暂无申请</h3>
-                  <p className="text-gray-500">发布内推职位，吸引求职者申请</p>
-                </Card>
+              {selectedApplication ? (
+                <>
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => setSelectedApplication(null)}
+                    className="mb-4"
+                  >
+                    返回申请列表
+                  </Button>
+                  <ApplicationDetail application={selectedApplication} />
+                </>
               ) : (
-                <div>
-                  {receivedApplications.map(app => (
-                    <ApplicationCard key={app.id} application={app} />
-                  ))}
-                </div>
+                <>
+                  <h2 className="text-xl font-semibold text-gray-900">收到的内推申请</h2>
+
+                  {receivedApplications.length === 0 ? (
+                    <Card className="text-center py-12">
+                      <TrendingUp className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">暂无申请</h3>
+                      <p className="text-gray-500">发布内推职位，吸引求职者申请</p>
+                    </Card>
+                  ) : (
+                    <div>
+                      {receivedApplications.map(app => (
+                        <ApplicationCard 
+                          key={app.id} 
+                          application={app} 
+                          showDetailButton={true}
+                          onViewDetail={setSelectedApplication}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

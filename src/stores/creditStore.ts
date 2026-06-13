@@ -158,18 +158,27 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
     }) as EventListener);
 
     window.addEventListener('addEvaluation', ((event: CustomEvent) => {
-      const { application, rating, comment } = event.detail;
+      const { application, rating, comment, evaluatorId, evaluatorName } = event.detail;
       const { records } = get();
 
       const scoreChange = rating >= 4 ? 5 : rating >= 3 ? 2 : rating >= 2 ? 0 : -5;
 
+      const evaluatedUserId = evaluatorId === application.seekerId 
+        ? application.publisherId 
+        : application.seekerId;
+
       const record: CreditRecord = {
         id: `cr-${Date.now()}-evaluation`,
-        userId: application.publisherId,
-        type: 'success',
+        userId: evaluatedUserId,
+        type: 'evaluation',
         score: scoreChange,
-        reason: `获得评价：${comment} (${rating}星)`,
-        relatedUserId: application.seekerId,
+        reason: `获得${evaluatorName}的评价：${comment}`,
+        relatedUserId: evaluatorId,
+        relatedUserName: evaluatorName,
+        relatedApplicationId: application.id,
+        relatedJobTitle: application.jobTitle,
+        relatedCompany: application.company,
+        rating: rating,
         createdAt: Date.now(),
       };
 
@@ -179,7 +188,7 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
       const evalEvent = new CustomEvent('creditChanged', {
         detail: {
-          userId: application.publisherId,
+          userId: evaluatedUserId,
           scoreChange: scoreChange,
         }
       });
