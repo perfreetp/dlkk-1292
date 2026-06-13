@@ -195,6 +195,7 @@ export const mockApplications: ExchangeApplication[] = [
   {
     id: 'app-1',
     jobId: 'job-1',
+    publisherId: 'user-2',
     jobTitle: '高级前端开发工程师',
     company: '字节跳动',
     seekerId: 'user-1',
@@ -208,6 +209,7 @@ export const mockApplications: ExchangeApplication[] = [
   {
     id: 'app-2',
     jobId: 'job-3',
+    publisherId: 'user-2',
     jobTitle: '前端架构师',
     company: '阿里巴巴',
     seekerId: 'user-1',

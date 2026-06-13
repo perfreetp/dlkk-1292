@@ -1,4 +1,5 @@
 import React from 'react';
+import { useMessageStore } from '../../stores/messageStore';
 import { Conversation } from '../../types';
 import { Avatar } from '../common/Avatar';
 
@@ -13,6 +14,12 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
   isActive,
   onClick,
 }) => {
+  const { applications } = useMessageStore();
+
+  const relatedApplication = conversation.applicationId
+    ? applications.find(app => app.id === conversation.applicationId)
+    : undefined;
+
   const formatTime = (timestamp: number) => {
     const now = Date.now();
     const diff = now - timestamp;
@@ -53,6 +60,11 @@ export const ConversationItem: React.FC<ConversationItemProps> = ({
             {formatTime(conversation.lastMessageTime)}
           </span>
         </div>
+        {relatedApplication && (
+          <p className="text-xs text-purple-600 mb-0.5 truncate">
+            {relatedApplication.jobTitle}
+          </p>
+        )}
         <p className="text-sm text-gray-500 truncate">{conversation.lastMessage || '暂无消息'}</p>
       </div>
     </button>

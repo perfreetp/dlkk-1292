@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, Calendar } from 'lucide-react';
+import { ArrowLeft, Send, Calendar, Briefcase } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { useMessageStore } from '../../stores/messageStore';
 import { Avatar } from '../common/Avatar';
@@ -24,7 +24,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
 
   const relatedApplication = conversation.applicationId
     ? applications.find(app => app.id === conversation.applicationId)
-    : applications.find(app => app.seekerId === conversation.participantId);
+    : undefined;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -77,7 +77,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
         <Avatar src={conversation.participantAvatar} alt={conversation.participantName} size="md" />
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">{conversation.participantName}</h3>
-          <p className="text-sm text-gray-500">在线</p>
+          {relatedApplication && (
+            <div className="flex items-center space-x-1 text-xs text-purple-600 mt-0.5">
+              <Briefcase className="w-3 h-3" />
+              <span>{relatedApplication.jobTitle}</span>
+            </div>
+          )}
         </div>
         <Button
           variant="secondary"

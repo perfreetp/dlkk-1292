@@ -17,7 +17,7 @@ interface ApplicationCardProps {
 export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application }) => {
   const navigate = useNavigate();
   const { currentUser } = useUserStore();
-  const { acceptApplication, submitFeedback, addEvaluation } = useMessageStore();
+  const { acceptApplication, submitFeedback, addEvaluation, createConversation, getConversationByApplication } = useMessageStore();
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showEvaluateModal, setShowEvaluateModal] = useState(false);
   const [feedbackResult, setFeedbackResult] = useState<'success' | 'fail' | ''>('');
@@ -72,7 +72,30 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
 
   const handleContact = () => {
     if (!currentUser) return;
-    navigate(`/messages?participant=${application.seekerId}`);
+
+    let conversation = getConversationByApplication(application.id);
+
+    if (!conversation) {
+      const participantId = currentUser.id === application.seekerId
+        ? application.publisherId
+        : application.seekerId;
+      const participantName = currentUser.id === application.seekerId
+        ? application.jobTitle
+        : application.seekerName;
+      const participantAvatar = currentUser.id === application.seekerId
+        ? ''
+        : application.seekerAvatar;
+
+      const convId = createConversation(
+        participantId,
+        participantName,
+        participantAvatar,
+        application.id
+      );
+      navigate(`/messages?conversation=${convId}`);
+    } else {
+      navigate(`/messages?conversation=${conversation.id}`);
+    }
   };
 
   const handleAccept = () => {

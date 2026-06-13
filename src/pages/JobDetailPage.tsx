@@ -50,8 +50,9 @@ export const JobDetailPage: React.FC = () => {
 
     incrementAppliedCount(job.id);
 
-    createApplication({
+    const newApplication = createApplication({
       jobId: job.id,
+      publisherId: job.publisherId,
       jobTitle: job.title,
       company: job.company,
       seekerId: currentUser.id,
@@ -60,12 +61,11 @@ export const JobDetailPage: React.FC = () => {
       resumeSummary: resumeSummary,
     });
 
-    const appId = `app-${Date.now()}`;
     createConversation(
       job.publisherId,
       job.publisherName,
       job.publisherAvatar,
-      appId
+      newApplication.id
     );
 
     setApplied(true);

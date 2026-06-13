@@ -88,19 +88,19 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
       if (result === 'success') {
         const seekerRecord: CreditRecord = {
-          id: `cr-${Date.now()}-seeker`,
+          id: `cr-${Date.now()}-seeker-success`,
           userId: application.seekerId,
           type: 'success',
           score: 10,
           reason: `内推成功入职 ${application.company}`,
-          relatedUserId: application.jobId,
+          relatedUserId: application.publisherId,
           createdAt: Date.now(),
         };
         newRecords.push(seekerRecord);
 
         const publisherRecord: CreditRecord = {
-          id: `cr-${Date.now()}-publisher`,
-          userId: application.jobId,
+          id: `cr-${Date.now()}-publisher-success`,
+          userId: application.publisherId,
           type: 'success',
           score: 10,
           reason: `成功内推 ${application.seekerName}`,
@@ -123,11 +123,37 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
         const publisherEvent = new CustomEvent('creditChanged', {
           detail: {
-            userId: application.jobId,
+            userId: application.publisherId,
             scoreChange: 10,
           }
         });
         window.dispatchEvent(publisherEvent);
+      } else if (result === 'fail') {
+        const seekerRecord: CreditRecord = {
+          id: `cr-${Date.now()}-seeker-fail`,
+          userId: application.seekerId,
+          type: 'missedDeadline',
+          score: 0,
+          reason: `内推未成功 ${application.company}`,
+          relatedUserId: application.publisherId,
+          createdAt: Date.now(),
+        };
+        newRecords.push(seekerRecord);
+
+        const publisherRecord: CreditRecord = {
+          id: `cr-${Date.now()}-publisher-fail`,
+          userId: application.publisherId,
+          type: 'missedDeadline',
+          score: 0,
+          reason: `${application.seekerName} 内推未成功`,
+          relatedUserId: application.seekerId,
+          createdAt: Date.now(),
+        };
+        newRecords.push(publisherRecord);
+
+        const updatedRecords = [...newRecords, ...records];
+        set({ records: updatedRecords });
+        saveToStorage('creditRecords', updatedRecords);
       }
     }) as EventListener);
 
@@ -138,8 +164,8 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
       const scoreChange = rating >= 4 ? 5 : rating >= 3 ? 2 : rating >= 2 ? 0 : -5;
 
       const record: CreditRecord = {
-        id: `cr-${Date.now()}-eval`,
-        userId: application.jobId,
+        id: `cr-${Date.now()}-evaluation`,
+        userId: application.publisherId,
         type: 'success',
         score: scoreChange,
         reason: `获得评价：${comment} (${rating}星)`,
@@ -153,7 +179,7 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
 
       const evalEvent = new CustomEvent('creditChanged', {
         detail: {
-          userId: application.jobId,
+          userId: application.publisherId,
           scoreChange: scoreChange,
         }
       });

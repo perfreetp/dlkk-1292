@@ -14,11 +14,11 @@ interface MessageStore {
   updateApplicationStatus: (applicationId: string, status: ExchangeApplication['status']) => void;
   setFeedbackDeadline: (applicationId: string, deadline: number) => void;
   acceptApplication: (applicationId: string) => void;
-  createConversation: (participantId: string, participantName: string, participantAvatar: string) => string;
-  createApplication: (application: Omit<ExchangeApplication, 'id' | 'createdAt' | 'status'>) => void;
+  createConversation: (participantId: string, participantName: string, participantAvatar: string, applicationId?: string) => string;
+  getConversationByApplication: (applicationId: string) => Conversation | undefined;
+  createApplication: (applicationData: Omit<ExchangeApplication, 'id' | 'createdAt' | 'status'>) => ExchangeApplication;
   submitFeedback: (applicationId: string, result: 'success' | 'fail') => void;
   addEvaluation: (applicationId: string, rating: number, comment: string) => void;
-  getApplicationByConversation: (participantId: string, jobId: string) => ExchangeApplication | undefined;
 }
 
 const loadFromStorage = <T>(key: string, defaultValue: T): T => {
@@ -134,12 +134,24 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     saveToStorage('applications', updatedApplications);
   },
 
+  getConversationByApplication: (applicationId: string) => {
+    const { conversations } = get();
+    return conversations.find(c => c.applicationId === applicationId);
+  },
+
   createConversation: (participantId: string, participantName: string, participantAvatar: string, applicationId?: string) => {
     const { conversations, messages } = get();
-    const existingConv = conversations.find(c => c.participantId === participantId);
 
+    if (applicationId) {
+      const existingConv = conversations.find(c => c.applicationId === applicationId);
+      if (existingConv) {
+        return existingConv.id;
+      }
+    }
+
+    const existingConv = conversations.find(c => c.participantId === participantId && !c.applicationId);
     if (existingConv) {
-      if (applicationId && !existingConv.applicationId) {
+      if (applicationId) {
         const updatedConversations = conversations.map(c =>
           c.id === existingConv.id ? { ...c, applicationId } : c
         );
@@ -189,6 +201,8 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     const updatedApplications = [newApplication, ...applications];
     set({ applications: updatedApplications });
     saveToStorage('applications', updatedApplications);
+
+    return newApplication;
   },
 
   submitFeedback: (applicationId: string, result: 'success' | 'fail') => {
@@ -229,10 +243,5 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
       }
     });
     window.dispatchEvent(event);
-  },
-
-  getApplicationByConversation: (participantId: string, jobId: string) => {
-    const { applications } = get();
-    return applications.find(app => app.seekerId === participantId && app.jobId === jobId);
   },
 }));

@@ -42,6 +42,7 @@ export interface Job {
 export interface ExchangeApplication {
   id: string;
   jobId: string;
+  publisherId: string;
   jobTitle: string;
   company: string;
   seekerId: string;

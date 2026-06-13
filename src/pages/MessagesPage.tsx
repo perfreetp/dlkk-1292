@@ -10,19 +10,19 @@ export const MessagesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [showChat, setShowChat] = useState(false);
 
-  const participantParam = searchParams.get('participant');
+  const conversationParam = searchParams.get('conversation');
 
   const activeConversation = conversations.find(c => c.id === currentConversationId);
 
   useEffect(() => {
-    if (participantParam) {
-      const conv = conversations.find(c => c.participantId === participantParam);
+    if (conversationParam) {
+      const conv = conversations.find(c => c.id === conversationParam);
       if (conv) {
         setCurrentConversation(conv.id);
         setShowChat(true);
       }
     }
-  }, [participantParam, conversations, setCurrentConversation]);
+  }, [conversationParam, conversations, setCurrentConversation]);
 
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversation(conversationId);
