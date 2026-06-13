@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Target, Briefcase, TrendingUp } from 'lucide-react';
 import { useJobStore } from '../stores/jobStore';
 import { useUserStore } from '../stores/userStore';
@@ -7,7 +8,6 @@ import { MatchCard } from '../components/exchange/MatchCard';
 import { ApplicationCard } from '../components/exchange/ApplicationCard';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
-import { Button } from '../components/common/Button';
 
 type TabType = 'recommendations' | 'applications' | 'received';
 
@@ -15,7 +15,15 @@ export const ExchangePage: React.FC = () => {
   const { jobs } = useJobStore();
   const { currentUser } = useUserStore();
   const { applications } = useMessageStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('recommendations');
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'applications' || tabParam === 'received' || tabParam === 'recommendations') {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   if (!currentUser) {
     return (
@@ -46,6 +54,11 @@ export const ExchangePage: React.FC = () => {
     { id: 'received' as const, label: '收到的申请', icon: TrendingUp, count: receivedApplications.length },
   ];
 
+  const handleTabChange = (tabId: TabType) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-8 text-white">
@@ -63,7 +76,7 @@ export const ExchangePage: React.FC = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 transition-all ${
                   isActive
                     ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-600'
@@ -97,9 +110,6 @@ export const ExchangePage: React.FC = () => {
                   <p className="text-gray-500 mb-4">
                     设置您的求职意向，获取更精准的推荐
                   </p>
-                  <Button onClick={() => window.location.href = '/profile'}>
-                    去设置求职意向
-                  </Button>
                 </Card>
               ) : (
                 <div className="grid gap-6 md:grid-cols-2">

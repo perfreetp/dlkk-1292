@@ -49,11 +49,6 @@ export const JobDetailPage: React.FC = () => {
     if (!currentUser) return;
 
     incrementAppliedCount(job.id);
-    createConversation(
-      job.publisherId,
-      job.publisherName,
-      job.publisherAvatar
-    );
 
     createApplication({
       jobId: job.id,
@@ -65,10 +60,18 @@ export const JobDetailPage: React.FC = () => {
       resumeSummary: resumeSummary,
     });
 
+    const appId = `app-${Date.now()}`;
+    createConversation(
+      job.publisherId,
+      job.publisherName,
+      job.publisherAvatar,
+      appId
+    );
+
     setApplied(true);
     setShowApplyModal(false);
     setResumeSummary('');
-    navigate(`/exchange`);
+    navigate(`/exchange?tab=applications`);
   };
 
   const handleContact = () => {

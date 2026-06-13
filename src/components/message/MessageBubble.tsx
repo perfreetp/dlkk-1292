@@ -19,10 +19,30 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   };
 
   if (message.type === 'feedback_约定') {
+    const dateMatch = message.content.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+    let highlightDate = '';
+    if (dateMatch) {
+      highlightDate = `${dateMatch[1]}年${dateMatch[2]}月${dateMatch[3]}日`;
+    }
+
     return (
       <div className="flex justify-center my-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-700">
-          <span className="font-medium">约定反馈时间</span>
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl px-6 py-4 text-white shadow-lg max-w-md">
+          <div className="flex items-center space-x-2 mb-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="font-semibold">约定反馈时间</span>
+          </div>
+          {highlightDate && (
+            <div className="text-2xl font-bold text-center py-2 bg-white/20 rounded-lg mb-2">
+              {highlightDate}
+            </div>
+          )}
+          <p className="text-sm text-blue-100 text-center">{message.content}</p>
+          <p className="text-xs text-blue-200 text-center mt-2">
+            {formatTime(message.createdAt)}
+          </p>
         </div>
       </div>
     );

@@ -22,6 +22,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
 
   const conversationMessages = messages[conversation.id] || [];
 
+  const relatedApplication = conversation.applicationId
+    ? applications.find(app => app.id === conversation.applicationId)
+    : applications.find(app => app.seekerId === conversation.participantId);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationMessages]);
@@ -42,17 +46,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
   const handleConfirmDate = () => {
     if (!selectedDate || !currentUser) return;
 
-    const application = applications.find(app => app.seekerId === conversation.participantId);
-    if (application) {
-      const deadline = new Date(selectedDate).getTime();
-      setFeedbackDeadline(application.id, deadline);
-      sendMessage(
-        conversation.id,
-        `已约定反馈时间：${new Date(deadline).toLocaleDateString('zh-CN')}`,
-        currentUser.id,
-        'feedback_约定'
-      );
+    const deadline = new Date(selectedDate).getTime();
+
+    if (relatedApplication) {
+      setFeedbackDeadline(relatedApplication.id, deadline);
     }
+
+    const formattedDate = new Date(deadline).toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    sendMessage(
+      conversation.id,
+      `已约定反馈时间：${formattedDate}，请在该日期前给出内推结果反馈`,
+      currentUser.id,
+      'feedback_约定'
+    );
     setShowDatePicker(false);
     setSelectedDate('');
   };
@@ -80,7 +91,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
 
       {showDatePicker && (
         <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
-          <p className="text-sm text-blue-800 mb-2">设置反馈时间提醒：</p>
+          <p className="text-sm text-blue-800 mb-2">设置内推反馈时间：</p>
           <div className="flex items-center space-x-2">
             <input
               type="date"
@@ -96,6 +107,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ conversation, onBack }) 
               取消
             </Button>
           </div>
+          <p className="text-xs text-blue-600 mt-2">
+            约定后会在聊天中显示明确的时间提醒，并同步到申请卡片
+          </p>
         </div>
       )}
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useMessageStore } from '../stores/messageStore';
 import { ConversationItem } from '../components/message/ConversationItem';
@@ -6,9 +7,22 @@ import { ChatWindow } from '../components/message/ChatWindow';
 
 export const MessagesPage: React.FC = () => {
   const { conversations, currentConversationId, setCurrentConversation } = useMessageStore();
+  const [searchParams] = useSearchParams();
   const [showChat, setShowChat] = useState(false);
 
+  const participantParam = searchParams.get('participant');
+
   const activeConversation = conversations.find(c => c.id === currentConversationId);
+
+  useEffect(() => {
+    if (participantParam) {
+      const conv = conversations.find(c => c.participantId === participantParam);
+      if (conv) {
+        setCurrentConversation(conv.id);
+        setShowChat(true);
+      }
+    }
+  }, [participantParam, conversations, setCurrentConversation]);
 
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversation(conversationId);
@@ -17,7 +31,6 @@ export const MessagesPage: React.FC = () => {
 
   const handleBack = () => {
     setShowChat(false);
-    setCurrentConversation(null);
   };
 
   const sidebarClass = showChat

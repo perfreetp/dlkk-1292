@@ -17,7 +17,7 @@ interface ApplicationCardProps {
 export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application }) => {
   const navigate = useNavigate();
   const { currentUser } = useUserStore();
-  const { createConversation, submitFeedback, addEvaluation } = useMessageStore();
+  const { acceptApplication, submitFeedback, addEvaluation } = useMessageStore();
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showEvaluateModal, setShowEvaluateModal] = useState(false);
   const [feedbackResult, setFeedbackResult] = useState<'success' | 'fail' | ''>('');
@@ -72,12 +72,11 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
 
   const handleContact = () => {
     if (!currentUser) return;
-    createConversation(
-      application.seekerId,
-      application.seekerName,
-      application.seekerAvatar
-    );
-    navigate(`/messages`);
+    navigate(`/messages?participant=${application.seekerId}`);
+  };
+
+  const handleAccept = () => {
+    acceptApplication(application.id);
   };
 
   const handleFeedback = () => {
@@ -103,7 +102,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
+              <div className="flex items-center space-x-2 mb-2 flex-wrap">
                 <h3 className="text-lg font-semibold text-gray-900">{application.jobTitle}</h3>
                 <Badge variant={statusConfig.variant}>{statusConfig.text}</Badge>
                 {application.result === 'success' && (
@@ -145,7 +144,8 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
 
             {application.status === 'pending' && (
               <>
-                <Button size="sm" onClick={() => setShowFeedbackModal(true)}>
+                <Button size="sm" onClick={handleAccept}>
+                  <CheckCircle className="w-4 h-4 mr-1" />
                   接受申请
                 </Button>
               </>
@@ -178,7 +178,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application })
       <Modal
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
-        title="内推结果反馈"
+        title="提交内推结果"
         size="sm"
       >
         <div className="p-6 space-y-4">

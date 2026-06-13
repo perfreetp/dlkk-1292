@@ -82,48 +82,53 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
   initEventListeners: () => {
     window.addEventListener('submitFeedback', ((event: CustomEvent) => {
       const { application, result } = event.detail;
-      const { addRecord, records } = get();
+      const { records } = get();
+
+      const newRecords: CreditRecord[] = [];
 
       if (result === 'success') {
-        addRecord({
+        const seekerRecord: CreditRecord = {
+          id: `cr-${Date.now()}-seeker`,
           userId: application.seekerId,
           type: 'success',
           score: 10,
           reason: `内推成功入职 ${application.company}`,
           relatedUserId: application.jobId,
-        });
+          createdAt: Date.now(),
+        };
+        newRecords.push(seekerRecord);
 
-        addRecord({
+        const publisherRecord: CreditRecord = {
+          id: `cr-${Date.now()}-publisher`,
           userId: application.jobId,
           type: 'success',
           score: 10,
           reason: `成功内推 ${application.seekerName}`,
           relatedUserId: application.seekerId,
+          createdAt: Date.now(),
+        };
+        newRecords.push(publisherRecord);
+
+        const updatedRecords = [...newRecords, ...records];
+        set({ records: updatedRecords });
+        saveToStorage('creditRecords', updatedRecords);
+
+        const seekerEvent = new CustomEvent('creditChanged', {
+          detail: {
+            userId: application.seekerId,
+            scoreChange: 10,
+          }
         });
+        window.dispatchEvent(seekerEvent);
+
+        const publisherEvent = new CustomEvent('creditChanged', {
+          detail: {
+            userId: application.jobId,
+            scoreChange: 10,
+          }
+        });
+        window.dispatchEvent(publisherEvent);
       }
-
-      const seekerRecord: CreditRecord = {
-        id: `cr-${Date.now()}-seeker`,
-        userId: application.seekerId,
-        type: result === 'success' ? 'success' : 'missedDeadline',
-        score: result === 'success' ? 10 : 0,
-        reason: result === 'success' ? '内推成功' : '内推未成功',
-        relatedUserId: application.jobId,
-        createdAt: Date.now(),
-      };
-
-      const publisherRecord: CreditRecord = {
-        id: `cr-${Date.now()}-publisher`,
-        userId: application.jobId,
-        type: result === 'success' ? 'success' : 'missedDeadline',
-        score: result === 'success' ? 10 : 0,
-        reason: result === 'success' ? '成功内推' : '内推未成功',
-        relatedUserId: application.seekerId,
-        createdAt: Date.now(),
-      };
-
-      const updatedRecords = [seekerRecord, publisherRecord, ...records];
-      saveToStorage('creditRecords', updatedRecords);
     }) as EventListener);
 
     window.addEventListener('addEvaluation', ((event: CustomEvent) => {
@@ -143,7 +148,16 @@ export const useCreditStore = create<CreditStore>((set, get) => ({
       };
 
       const updatedRecords = [record, ...records];
+      set({ records: updatedRecords });
       saveToStorage('creditRecords', updatedRecords);
+
+      const evalEvent = new CustomEvent('creditChanged', {
+        detail: {
+          userId: application.jobId,
+          scoreChange: scoreChange,
+        }
+      });
+      window.dispatchEvent(evalEvent);
     }) as EventListener);
   },
 }));

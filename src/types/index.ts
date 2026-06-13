@@ -59,6 +59,7 @@ export interface Conversation {
   participantId: string;
   participantName: string;
   participantAvatar: string;
+  applicationId?: string;
   lastMessage: string;
   lastMessageTime: number;
   unreadCount: number;

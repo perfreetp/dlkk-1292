@@ -13,6 +13,7 @@ interface MessageStore {
   markAsRead: (conversationId: string) => void;
   updateApplicationStatus: (applicationId: string, status: ExchangeApplication['status']) => void;
   setFeedbackDeadline: (applicationId: string, deadline: number) => void;
+  acceptApplication: (applicationId: string) => void;
   createConversation: (participantId: string, participantName: string, participantAvatar: string) => string;
   createApplication: (application: Omit<ExchangeApplication, 'id' | 'createdAt' | 'status'>) => void;
   submitFeedback: (applicationId: string, result: 'success' | 'fail') => void;
@@ -115,7 +116,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     const { applications } = get();
     const updatedApplications = applications.map(app =>
       app.id === applicationId
-        ? { ...app, feedbackDeadline: deadline, status: 'accepted' as const }
+        ? { ...app, feedbackDeadline: deadline }
         : app
     );
 
@@ -123,11 +124,28 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     saveToStorage('applications', updatedApplications);
   },
 
-  createConversation: (participantId: string, participantName: string, participantAvatar: string) => {
+  acceptApplication: (applicationId: string) => {
+    const { applications } = get();
+    const updatedApplications = applications.map(app =>
+      app.id === applicationId ? { ...app, status: 'accepted' as const } : app
+    );
+
+    set({ applications: updatedApplications });
+    saveToStorage('applications', updatedApplications);
+  },
+
+  createConversation: (participantId: string, participantName: string, participantAvatar: string, applicationId?: string) => {
     const { conversations, messages } = get();
     const existingConv = conversations.find(c => c.participantId === participantId);
 
     if (existingConv) {
+      if (applicationId && !existingConv.applicationId) {
+        const updatedConversations = conversations.map(c =>
+          c.id === existingConv.id ? { ...c, applicationId } : c
+        );
+        set({ conversations: updatedConversations });
+        saveToStorage('conversations', updatedConversations);
+      }
       return existingConv.id;
     }
 
@@ -136,6 +154,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
       participantId,
       participantName,
       participantAvatar,
+      applicationId,
       lastMessage: '',
       lastMessageTime: Date.now(),
       unreadCount: 0,
